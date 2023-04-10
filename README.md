@@ -26,8 +26,7 @@ This script is designed to parse HealthKit data exported from an iOS device and 
 
 
 ## Sample Output
-
- 
+![SampleOutput](https://user-images.githubusercontent.com/130081417/230970685-744d85da-e402-4409-ba1e-504089e89a7a.png)
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.
