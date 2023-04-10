@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
+from tabulate import tabulate
 import sys
 
 class Workout:
@@ -49,14 +50,13 @@ class Workout:
         else:
             return f'{self.workoutActivityType}, Duration: {self.duration} {self.durationUnit}, Distance: {self.totalDistance} {self.totalDistanceUnit}, Energy Burned: {self.totalActiveEnergy} {self.totalActiveEnergyUnit}, Created on: {self.creationDate}, Elevation Ascended: {self.elevationAscended}, Temperature: {self.weatherTemperature}, Humidity: {self.weatherHumidity}'
 
-# Group workouts by week starting on sunday
 def groupByWeek(workouts):
     weekGroups = {}
-    start_date = datetime.strptime(workouts[0].creationDate, '%Y-%m-%d %H:%M:%S %z')
-    week_start = start_date - timedelta(days=start_date.weekday())
+    startDate = datetime.strptime(workouts[0].creationDate, '%Y-%m-%d %H:%M:%S %z')
+    weekStart = startDate - timedelta(days=startDate.weekday())
     for workout in workouts:
         creationDate = datetime.strptime(workout.creationDate, '%Y-%m-%d %H:%M:%S %z')
-        weekNumber = (creationDate - week_start).days // 7 + 1
+        weekNumber = (creationDate - weekStart).days // 7 + 1
         if weekNumber not in weekGroups:
             weekGroups[weekNumber] = []
         weekGroups[weekNumber].append(workout)
@@ -69,19 +69,9 @@ def calculateWeeklyTotals(workouts):
     totalCalories = 0
     
     for weekNumber, weekWorkouts in groupByWeek(workouts).items():
-        weekStart = min(weekWorkouts, key=lambda workout: datetime.strptime(workout.creationDate, '%Y-%m-%d %H:%M:%S %z')).creationDate
-        weekEnd = max(weekWorkouts, key=lambda workout: datetime.strptime(workout.creationDate, '%Y-%m-%d %H:%M:%S %z')).creationDate
-
-        # Format to easy output string without hour (YYYY-MM-DD)
-        formattedStart = datetime.strptime(weekStart, '%Y-%m-%d %H:%M:%S %z').strftime('%Y-%m-%d')
-        formattedEnd = datetime.strptime(weekEnd, '%Y-%m-%d %H:%M:%S %z').strftime('%Y-%m-%d')
-
-        
         weeklyTotalDistance = sum(float(workout.totalDistance) for workout in weekWorkouts if workout.totalDistance)
         weeklyTotalActiveEnergy = sum(float(workout.totalActiveEnergy) for workout in weekWorkouts if workout.totalActiveEnergy)
         weeklyTotals[weekNumber] = {
-            'start': formattedStart,
-            'end': formattedEnd,
             'totalDistance': round(weeklyTotalDistance, 2),
             'totalDistanceUnit': weekWorkouts[0].totalDistanceUnit if weekWorkouts else 'N/A',
             'totalActiveEnergy': round(weeklyTotalActiveEnergy, 2),
@@ -100,7 +90,6 @@ def calculateWeeklyTotals(workouts):
             
     return totalMiles, totalCalories, weeklyTotals
 
-import xml.etree.ElementTree as ET
 
 def main():
     # Read command line for file path
@@ -123,31 +112,39 @@ def main():
         elif workoutType == 'HKWorkoutActivityTypeWalking':
             walks.append(Workout(workout))
 
-    # Print weekly totals for runs
+    # populate our working data
     totalRunningMiles, totalRunningCalories, runWeeklyTotals = calculateWeeklyTotals(runs)
     totalRunningMiles = round(totalRunningMiles, 2)
     totalRunningCalories = round(totalRunningCalories, 2)
 
-    print('Runs Weekly Totals:')
-    for weekNumber, weeklyTotal in runWeeklyTotals.items():
-        print(f'Week {weekNumber} ({weeklyTotal["start"]} to {weeklyTotal["end"]}): {weeklyTotal["totalDistance"]} {weeklyTotal["totalDistanceUnit"]} total distance, {weeklyTotal["totalActiveEnergy"]} {weeklyTotal["totalActiveEnergyUnit"]} total active energy, {weeklyTotal["percentChange"]} change from previous week')
-
-    # Print weekly totals for walks
     totalWalkingMiles, totalWalkingCalories, walkWeeklyTotals = calculateWeeklyTotals(walks)
     totalWalkingMiles = round(totalWalkingMiles, 2)
     totalWalkingCalories = round(totalWalkingCalories, 2)
 
-    print('Walks Weekly Totals:')
-    for weekNumber, weeklyTotal in walkWeeklyTotals.items():
-        print(f'Week {weekNumber} ({weeklyTotal["start"]} to {weeklyTotal["end"]}): {weeklyTotal["totalDistance"]} {weeklyTotal["totalDistanceUnit"]} total distance, {weeklyTotal["totalActiveEnergy"]} {weeklyTotal["totalActiveEnergyUnit"]} total active energy, {weeklyTotal["percentChange"]} change from previous week')
+    # create table with all data
+    data = []
+    for weekNumber in runWeeklyTotals:
+        if weekNumber not in walkWeeklyTotals:
+            walkWeeklyTotals[weekNumber] = {'start': '-', 'end': '-', 'totalDistance': 0, 'totalDistanceUnit': '-', 'totalActiveEnergy': 0, 'totalActiveEnergyUnit': '-', 'percentChange': '-'}
+        data.append([
+            f'{weekNumber}',
+            f"{runWeeklyTotals[weekNumber]['totalDistance']} {runWeeklyTotals[weekNumber]['totalDistanceUnit']}",
+            runWeeklyTotals[weekNumber]['totalActiveEnergy'],
+            f"{walkWeeklyTotals[weekNumber]['totalDistance']} {walkWeeklyTotals[weekNumber]['totalDistanceUnit']}",
+            walkWeeklyTotals[weekNumber]['totalActiveEnergy'],
+            runWeeklyTotals[weekNumber]['percentChange'],
+            walkWeeklyTotals[weekNumber]['percentChange'],
+        ])
 
-    print(f'\nTotal Running Miles: {totalRunningMiles}\nTotal Running Active Calories: {totalRunningCalories}')
-    print(f'\nTotal Walking Miles: {totalWalkingMiles}\nTotal Walking Active Calories: {totalRunningCalories}')
+    # print table
+    headers = ['Week', 'Run Distance', 'Run Calories', 'Walk Distance', 'Walk Calories', 'Run Distance % Change', 'Walk Distance % Change']
+    print(tabulate(data, headers=headers, tablefmt='grid'))
 
+    # print total miles and calories
     totalMiles = round(totalRunningMiles + totalWalkingMiles, 2)
     totalCalories = round(totalRunningCalories + totalWalkingCalories, 2)
 
-    print(f'\nTotal  Miles: {totalMiles}\nTotal Active Calories: {totalCalories}')
+    print(f'\nTotal Miles: {totalMiles}\nTotal Active Calories: {totalCalories}')
 
 if __name__ == '__main__':
     main()
