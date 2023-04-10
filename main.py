@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
+import sys
 
 class Workout:
     def __init__(self, workoutElement):
@@ -102,8 +103,14 @@ def calculateWeeklyTotals(workouts):
 import xml.etree.ElementTree as ET
 
 def main():
+    # Read command line for file path
+    if len(sys.argv) < 2:
+        print("Please provide the file name as command line argument.")
+        sys.exit(1)
+    fileName = sys.argv[1]
+
     # Parse the XML file
-    tree = ET.parse('export.xml')
+    tree = ET.parse(fileName)
     root = tree.getroot()
 
     # Find all Workout elements and create a Workout object for each one
