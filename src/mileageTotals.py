@@ -52,14 +52,22 @@ class Workout:
 
 def groupByWeek(workouts):
     weekGroups = {}
-    startDate = datetime.strptime(workouts[0].creationDate, '%Y-%m-%d %H:%M:%S %z')
-    weekStart = startDate - timedelta(days=startDate.weekday())
+    weekStart = datetime.strptime(workouts[0].creationDate, '%Y-%m-%d %H:%M:%S %z')
+
     for workout in workouts:
         creationDate = datetime.strptime(workout.creationDate, '%Y-%m-%d %H:%M:%S %z')
         weekNumber = (creationDate - weekStart).days // 7 + 1
         if weekNumber not in weekGroups:
             weekGroups[weekNumber] = []
         weekGroups[weekNumber].append(workout)
+
+    # Create empty lists for weeks without any workouts that didn't already get added
+    minWeek = min(weekGroups.keys())
+    maxWeek = max(weekGroups.keys())
+    for weekNumber in range(minWeek, maxWeek+1):
+        if weekNumber not in weekGroups:
+            weekGroups[weekNumber] = []
+
     return weekGroups
 
 # Calculate weekly totals with percent change from previous week
@@ -68,7 +76,8 @@ def calculateWeeklyTotals(workouts):
     totalMiles = 0
     totalCalories = 0
     
-    for weekNumber, weekWorkouts in groupByWeek(workouts).items():
+    weekGroups = groupByWeek(workouts)
+    for weekNumber, weekWorkouts in weekGroups.items():
         weeklyTotalDistance = sum(float(workout.totalDistance) for workout in weekWorkouts if workout.totalDistance)
         weeklyTotalActiveEnergy = sum(float(workout.totalActiveEnergy) for workout in weekWorkouts if workout.totalActiveEnergy)
         weeklyTotals[weekNumber] = {
@@ -81,12 +90,15 @@ def calculateWeeklyTotals(workouts):
         totalMiles += weeklyTotalDistance
         totalCalories += weeklyTotalActiveEnergy
         
-        if weekNumber == 1:
+        if weekNumber == 1 or weekNumber-1 not in weeklyTotals:
             weeklyTotals[weekNumber]['percentChange'] = 'N/A'
         else:
             previousWeekTotalDistance = weeklyTotals[weekNumber-1]['totalDistance']
-            percentChange = (weeklyTotalDistance - previousWeekTotalDistance) / previousWeekTotalDistance * 100
-            weeklyTotals[weekNumber]['percentChange'] = f'{percentChange:.2f}%'
+            if previousWeekTotalDistance == 0:
+                weeklyTotals[weekNumber]['percentChange'] = 0
+            else:
+                percentChange = (weeklyTotalDistance - previousWeekTotalDistance) / previousWeekTotalDistance * 100
+                weeklyTotals[weekNumber]['percentChange'] = f'{percentChange:.2f}%'
             
     return totalMiles, totalCalories, weeklyTotals
 
@@ -139,6 +151,10 @@ def main():
     # print table
     headers = ['Week', 'Run Distance', 'Run Calories', 'Walk Distance', 'Walk Calories', 'Run Distance % Change', 'Walk Distance % Change']
     print(tabulate(data, headers=headers, tablefmt='grid'))
+
+    # print walking and running totals
+    print(f'\nTotal Running Miles: {totalRunningMiles}\nTotal Active Calories: {totalRunningCalories}')
+    print(f'\nTotal Walking Miles: {totalWalkingMiles}\nTotal Active Calories: {totalWalkingCalories}')
 
     # print total miles and calories
     totalMiles = round(totalRunningMiles + totalWalkingMiles, 2)
