@@ -14,8 +14,8 @@ This script is designed to parse HealthKit data exported from an iOS device and 
 
 ### Installation
 
- - Clone the repository: `git clone https://github.com/groenern/NASA-APOD-MySQL-Connector-Project.git`
- - Install tabulate `pip install tabulate`
+ - Clone the repository: `git clone https://github.com/groenern/HealthKit-Python-MileTotals.git`
+ - Install tabulate `pip install -r requirements.txt`
 
   
 ### Usage
