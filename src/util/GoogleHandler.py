@@ -30,6 +30,7 @@ class GoogleHandler:
         return worksheet
     
     def createWorksheet(self, worksheetName, worksheetRows, worksheetCols):
+        print(worksheetName, worksheetRows,worksheetCols)
         # Check "sheet1" exists and if it does rename it
         worksheet = None
         try:
@@ -48,7 +49,7 @@ class GoogleHandler:
         # If the worksheet doesn't exist, create it
         if not worksheet:
             worksheet = self.spreadsheet.add_worksheet(worksheetName, worksheetRows, worksheetCols)
-
+    
     # for passing workouts, runs, walks etc.
     def populateWorksheet(self, worksheetName, workouts):
         worksheet = self.spreadsheet.worksheet(worksheetName)
@@ -60,18 +61,6 @@ class GoogleHandler:
         for workout in workouts:
             row = [workout.creationDate, workout.workoutActivityType, workout.totalActiveEnergy, workout.totalDistance]
             rows.append(row)
-
-        worksheet.insert_rows(rows)
-
-    
-    def populateMetrics(self, worksheetName, data):
-        worksheet = self.spreadsheet.worksheet(worksheetName)
-        worksheet.clear()
-
-        headers = ['Week', 'Run Distance', 'Run Calories', 'Walk Distance', 'Walk Calories', 'Run Distance % Change', 'Walk Distance % Change']
-        rows = [headers]
-        for datum in data:
-           rows.append(datum)
 
         worksheet.insert_rows(rows)
 
