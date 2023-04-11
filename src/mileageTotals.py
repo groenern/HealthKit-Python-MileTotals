@@ -34,7 +34,7 @@ def populateData():
 
     return workouts, runs, walks, runWeeklyTotals, walkWeeklyTotals, rowWidth, colLength
 
-def printTable(runWeeklyTotals, walkWeeklyTotals):
+def generateWeeklyAverage(runWeeklyTotals, walkWeeklyTotals):
     data = []
     for weekNumber in runWeeklyTotals:
         if weekNumber not in walkWeeklyTotals:
@@ -48,10 +48,8 @@ def printTable(runWeeklyTotals, walkWeeklyTotals):
             runWeeklyTotals[weekNumber]['percentChange'],
             walkWeeklyTotals[weekNumber]['percentChange'],
         ])
-
-    # print table
-    headers = ['Week', 'Run Distance', 'Run Calories', 'Walk Distance', 'Walk Calories', 'Run Distance % Change', 'Walk Distance % Change']
-    print(tabulate(data, headers=headers, tablefmt='grid'))
+    
+    return data
 
 def main():
     workouts, runs, walks, runWeeklyTotals, walkWeeklyTotals, rowWidth, colLength = populateData()
@@ -65,10 +63,21 @@ def main():
     spreadsheet = 'Apple_Watch_Spreadsheet_Data_{}'.format(today)
     myGoogleHandler = GoogleHandler(email, credentials,spreadsheet)
    
-    # create "workouts" worksheet
+    # create and populates workouts
     myGoogleHandler.createWorksheet("Workouts", rowWidth, colLength)
-    # populates "workouts" worksheet
     myGoogleHandler.populateWorksheet("Workouts", workouts)
+
+    # create and populate runs
+    myGoogleHandler.createWorksheet("Runs", rowWidth, colLength)
+    myGoogleHandler.populateWorksheet("Runs", runs)
+
+    # create and populate walks
+    myGoogleHandler.createWorksheet("Walks", rowWidth, colLength)
+    myGoogleHandler.populateWorksheet("Walks", walks)
+
+    # create and populate averages
+    myGoogleHandler.createWorksheet("Weekly Averages", rowWidth, colLength)
+    myGoogleHandler.populateMetrics("Weekly Averages", generateWeeklyAverage(runWeeklyTotals, walkWeeklyTotals))
 
     print(myGoogleHandler.__str__())
 
