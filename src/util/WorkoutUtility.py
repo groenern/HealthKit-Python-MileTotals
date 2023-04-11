@@ -1,4 +1,5 @@
 from datetime import datetime
+from model.Workout import Workout
 
 class WorkoutUtility:
     def groupByWeek(self, workouts):
@@ -23,6 +24,7 @@ class WorkoutUtility:
 
     # Calculate weekly totals with percent change from previous week
     def calculateWeeklyTotals(self, workouts):
+
         weeklyTotals = {}
         totalMiles = 0
         totalCalories = 0
@@ -51,4 +53,11 @@ class WorkoutUtility:
                     percentChange = (weeklyTotalDistance - previousWeekTotalDistance) / previousWeekTotalDistance * 100
                     weeklyTotals[weekNumber]['percentChange'] = f'{percentChange:.2f}%'
 
-        return totalMiles, totalCalories, weeklyTotals
+        return weeklyTotals
+    
+    def calcRowsCols(self, workouts):
+        # +1 for blank space in top left
+        rows = len(workouts) + 1
+        cols = len(workouts[0]) + 1
+
+        return rows, cols

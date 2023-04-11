@@ -37,10 +37,12 @@ class Workout:
             elif entry.get('type') == "HKQuantityTypeIdentifierDistanceWalkingRunning":
                 self.totalDistance = entry.get('sum')
                 self.totalDistanceUnit = entry.get('unit')
-
-
+    
     def __str__(self):
         if self.indoorWorkout:
             return f'{self.workoutActivityType}, Indoor: {self.indoorWorkout}, Duration: {self.duration} {self.durationUnit}, Distance: {self.totalDistance} {self.totalDistanceUnit}, Energy Burned: {self.totalActiveEnergy} {self.totalActiveEnergyUnit}, Created on: {self.creationDate}'
         else:
             return f'{self.workoutActivityType}, Duration: {self.duration} {self.durationUnit}, Distance: {self.totalDistance} {self.totalDistanceUnit}, Energy Burned: {self.totalActiveEnergy} {self.totalActiveEnergyUnit}, Created on: {self.creationDate}, Elevation Ascended: {self.elevationAscended}, Temperature: {self.weatherTemperature}, Humidity: {self.weatherHumidity}'
+
+    def __len__(self):
+        return len(vars(self))

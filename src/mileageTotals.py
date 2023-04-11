@@ -1,34 +1,40 @@
 from tabulate import tabulate
 import sys
-from Workout import Workout
-from WorkoutUtility import WorkoutUtility
-from XMLParser import XMLParser
+import datetime
+from util.WorkoutUtility import WorkoutUtility
+from util.XMLParser import XMLParser 
+from model.Workout import Workout
+from util.GoogleHandler import GoogleHandler
 
 def checkCommandLineArg():
     if len(sys.argv) < 2:
-        print("Please provide the file name as command line argument.")
-        sys.exit(1)
+        #print("Please provide the file name as command line argument.")
+        #sys.exit(1)
+        return "export.xml" ## DELETE LATER
 
     return sys.argv[1]
-    
-def main():
+
+def populateData():
     # Get Filename from sysargs and parse xml data
     fileName = checkCommandLineArg() 
-    runs, walks = XMLParser(fileName).parse()
+    xmlObject = XMLParser(fileName)
+    xmlObject.parse()
 
     # create workout utility
     workUtility = WorkoutUtility()
     
     # populate our working data
-    totalRunningMiles, totalRunningCalories, runWeeklyTotals = workUtility.calculateWeeklyTotals(runs)
-    totalRunningMiles = round(totalRunningMiles, 2)
-    totalRunningCalories = round(totalRunningCalories, 2)
+    workouts = xmlObject.getWorkouts()
+    runs, walks = xmlObject.getRunsWalks()
+    runWeeklyTotals = workUtility.calculateWeeklyTotals(runs)
+    walkWeeklyTotals = workUtility.calculateWeeklyTotals(walks)
 
-    totalWalkingMiles, totalWalkingCalories, walkWeeklyTotals = workUtility.calculateWeeklyTotals(walks)
-    totalWalkingMiles = round(totalWalkingMiles, 2)
-    totalWalkingCalories = round(totalWalkingCalories, 2)
+    # get rows and cols -> didn't want to create second utility object
+    rowWidth, colLength = workUtility.calcRowsCols(workouts=workouts)
 
-    # create table with all data
+    return workouts, runs, walks, runWeeklyTotals, walkWeeklyTotals, rowWidth, colLength
+
+def printTable(runWeeklyTotals, walkWeeklyTotals):
     data = []
     for weekNumber in runWeeklyTotals:
         if weekNumber not in walkWeeklyTotals:
@@ -47,15 +53,24 @@ def main():
     headers = ['Week', 'Run Distance', 'Run Calories', 'Walk Distance', 'Walk Calories', 'Run Distance % Change', 'Walk Distance % Change']
     print(tabulate(data, headers=headers, tablefmt='grid'))
 
-    # print walking and running totals
-    print(f'\nTotal Running Miles: {totalRunningMiles}\nTotal Active Calories: {totalRunningCalories}')
-    print(f'\nTotal Walking Miles: {totalWalkingMiles}\nTotal Active Calories: {totalWalkingCalories}')
+def main():
+    workouts, runs, walks, runWeeklyTotals, walkWeeklyTotals, rowWidth, colLength = populateData()
 
-    # print total miles and calories
-    totalMiles = round(totalRunningMiles + totalWalkingMiles, 2)
-    totalCalories = round(totalRunningCalories + totalWalkingCalories, 2)
+    # printTable(runWeeklyTotals, walkWeeklyTotals)
 
-    print(f'\nTotal Miles: {totalMiles}\nTotal Active Calories: {totalCalories}')
+    # set up googlehandler and connect
+    email = 'romangroenewold@gmail.com'
+    credentials = 'credentials.json'
+    today = datetime.datetime.today().strftime('%Y-%m-%d')
+    spreadsheet = 'Apple_Watch_Spreadsheet_Data_{}'.format(today)
+    myGoogleHandler = GoogleHandler(email, credentials,spreadsheet)
+   
+    # create "workouts" worksheet
+    myGoogleHandler.createWorksheet("Workouts", rowWidth, colLength)
+    # populates "workouts" worksheet
+    myGoogleHandler.populateWorksheet("Workouts", workouts)
+
+    print(myGoogleHandler.__str__())
 
 if __name__ == '__main__':
     main()
